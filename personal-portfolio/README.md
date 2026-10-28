@@ -24,3 +24,6 @@ This download is prepared for Vercel; it has not been deployed to a Vercel accou
 
 ## Update an existing GitHub deployment
 Upload the updated index.html, styles.css, script.js, and assets/ folder into the same repository. Keep assets/ beside index.html. Commit the changes to trigger your connected Vercel deployment.
+
+## Photography
+Photography Portrait and Photography Landscape each contain six photographs. Portrait photo frames use 3:4 and landscape photo frames use 16:9 for consistent alignment. Thumbnails crop slightly to fit; opening a photo displays the complete original. Add future photo records to the matching category in script.js and place their images in assets/. The introduction uses the approved creative-focused bio.

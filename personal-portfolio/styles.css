@@ -14,3 +14,64 @@
 .category-graphics .preview.screenshot{aspect-ratio:4 / 5}
 .category-brand .card{flex-basis:min(100%,760px)}
 .intro-photo img{object-fit:cover}
+
+/* Photo frames follow each original image ratio; full composition stays visible. */
+.category-photography .preview.screenshot{background:transparent}
+.category-photography .preview.screenshot img{object-fit:contain}
+.category-photography .card{display:flex;flex-direction:column;align-self:flex-start}
+.category-photography .card-bottom{gap:12px;flex-wrap:wrap}
+
+/* Consistent photography frames align every card within its gallery. */
+.photography-portrait .preview.screenshot{aspect-ratio:3 / 4}
+.photography-landscape .preview.screenshot{aspect-ratio:16 / 9}
+.category-photography .preview.screenshot img{object-fit:cover;object-position:center}
+
+/* Brand banners match landscape photography cards. */
+.category-brand .card{flex-basis:calc((100% - 48px)/3)}
+.category-brand .preview.screenshot{aspect-ratio:16 / 9}
+.category-brand .preview.screenshot img{object-fit:cover;object-position:center}
+@media(max-width:800px){.category-brand .card{flex-basis:calc((100% - 24px)/2)}}
+@media(max-width:540px){.category-brand .card{flex-basis:86%}}
+
+/* Locations stay legible over both bright and dark photographs. */
+.photo-location{position:absolute;bottom:0;left:0;right:0;padding:34px 18px 16px;background:linear-gradient(transparent,rgba(0,0,0,.85));color:#fff;font-size:14px;font-weight:500;line-height:1.5;text-align:left;pointer-events:none}
+#dialog-location{font-size:14px;color:var(--muted);margin-top:-8px}
+[hidden]{display:none!important}
+
+/* View the complete artwork and its description together. */
+#project-dialog{width:min(1200px,94vw);max-width:1200px;height:min(800px,92dvh);max-height:92dvh;padding:24px;overflow:hidden}
+#project-dialog .project-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:32px;height:100%;min-height:0}
+#project-dialog #dialog-images{display:grid;grid-auto-rows:minmax(0,1fr);gap:12px;margin:0;min-width:0;min-height:0;background:#f4f5f7;border-radius:6px;padding:12px}
+#project-dialog #dialog-images img{display:block;width:100%;height:100%;min-height:0;object-fit:contain;border-radius:0}
+#project-dialog .project-copy{align-self:center;max-height:100%;overflow-y:auto;padding:18px 16px 18px 0;min-width:0}
+#project-dialog .eyebrow{margin:0 0 12px}
+#project-dialog h2{font-size:clamp(24px,2.6vw,36px);line-height:1.15;margin:0 0 16px;letter-spacing:-.6px}
+#project-dialog #dialog-location{margin:0 0 18px;line-height:1.5}
+#project-dialog #dialog-description{font-size:16px;line-height:1.65;margin:0;color:var(--muted)}
+#project-dialog #dialog-tags{margin-top:18px}
+#project-dialog .close{right:8px;top:6px;z-index:2;line-height:1}
+@media(max-width:680px){
+ #project-dialog{height:auto;max-height:94dvh;width:94vw;padding:32px 16px 20px;overflow-y:auto}
+ #project-dialog .project-layout{display:flex;flex-direction:column;gap:20px;height:auto}
+ #project-dialog #dialog-images{height:32dvh;min-height:150px;flex-shrink:0;width:100%;padding:6px}
+ #project-dialog .project-copy{overflow:visible;max-height:none;padding:0;width:100%}
+ #project-dialog .eyebrow{margin-bottom:8px}
+ #project-dialog h2{margin-bottom:10px}
+ #project-dialog #dialog-location{margin-bottom:12px}
+ #project-dialog #dialog-description{line-height:1.5}
+ #project-dialog #dialog-tags{margin-top:12px}
+}
+
+/* Browse only the current category while the popup stays open. */
+#project-dialog{padding-left:64px;padding-right:64px}
+#project-dialog .dialog-nav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:48px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font-size:32px;line-height:1;display:grid;place-items:center;z-index:2}
+#project-dialog .dialog-previous{left:12px}
+#project-dialog .dialog-next{right:12px}
+#project-dialog .dialog-nav:hover:not(:disabled){background:#edf2ff;border-color:var(--blue)}
+#project-dialog .dialog-nav:disabled{opacity:.25;cursor:default}
+@media(max-width:680px){
+ #project-dialog{padding-left:16px;padding-right:16px;padding-top:56px}
+ #project-dialog .dialog-nav{top:8px;transform:none;height:36px;width:40px;font-size:26px}
+ #project-dialog .dialog-previous{left:16px}
+ #project-dialog .dialog-next{left:64px;right:auto}
+}
