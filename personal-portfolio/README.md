@@ -27,3 +27,7 @@ Upload the updated index.html, styles.css, script.js, and assets/ folder into th
 
 ## Photography
 Photography Portrait and Photography Landscape each contain six photographs. Portrait photo frames use 3:4 and landscape photo frames use 16:9 for consistent alignment. Thumbnails crop slightly to fit; opening a photo displays the complete original. Add future photo records to the matching category in script.js and place their images in assets/. The introduction uses the approved creative-focused bio.
+
+
+## Posters and resume
+Each homepage card and the top of each category page use a poster: assets/it-development-poster.png, assets/graphic-design-poster.png, assets/photography-poster.png and assets/brand-creative-poster.png (1920x1080). To swap one, replace the file with the same name. The Download Resume button serves assets/Jhory-Ducog-Resume.pdf; replace that file to update it (RESUME_READY in script.js controls the button).

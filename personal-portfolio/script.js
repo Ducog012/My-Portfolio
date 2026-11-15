@@ -1,6 +1,4 @@
-// Each project: [title, subtitle, previewStyle, previewText, description, tags, optionalScreenshots].
-// All project images and details are supplied portfolio work.
-const categories = [
+const rawCategories = [
   {
     "name": "Photography Portrait",
     "projects": [
@@ -351,40 +349,170 @@ const categories = [
     ]
   }
 ];
-const galleries=document.querySelector('#galleries');
-const dialog=document.querySelector('#project-dialog');
-let activeCategory=null;
-let activeProjectIndex=-1;
-function showDetails(category,project){activeCategory=categories.find(item=>item.name===category);activeProjectIndex=activeCategory.projects.indexOf(project);document.querySelector('#dialog-previous').disabled=activeProjectIndex===0;document.querySelector('#dialog-next').disabled=activeProjectIndex===activeCategory.projects.length-1;document.querySelector('#dialog-category').textContent=category;document.querySelector('#dialog-title').textContent=project[0];document.querySelector('#dialog-description').textContent=project[4];const location=document.querySelector('#dialog-location');location.textContent=project[7]||'';location.hidden=!project[7];const tags=document.querySelector('#dialog-tags');tags.replaceChildren(...project[5].map(tag=>{const el=document.createElement('span');el.textContent=tag;return el}));const images=document.querySelector('#dialog-images');images.replaceChildren(...(project[6]||[]).map((src,index)=>{const img=document.createElement('img');img.src=src;img.alt=project[0]+(index?' — additional project image':' — project image');return img}));document.querySelector('.sample-note').hidden=Boolean(project[6]);document.querySelector('.project-copy').scrollTop=0;dialog.scrollTop=0;if(!dialog.open)dialog.showModal()}
-function browseProject(direction){
- if(!activeCategory)return;
- const nextIndex=activeProjectIndex+direction;
- if(nextIndex<0||nextIndex>=activeCategory.projects.length)return;
- showDetails(activeCategory.name,activeCategory.projects[nextIndex]);
-}
-document.querySelector('#dialog-previous').addEventListener('click',()=>browseProject(-1));
-document.querySelector('#dialog-next').addEventListener('click',()=>browseProject(1));
-dialog.addEventListener('keydown',event=>{
- if(event.key==='ArrowLeft'||event.key==='ArrowRight'){
-  event.preventDefault();browseProject(event.key==='ArrowRight'?1:-1);
- }
-});
-categories.forEach((category,index)=>{
- const section=document.createElement('section');section.className=category.name==='Graphic Designs'?'category category-graphics':'category';if(category.name==='Brand Design')section.classList.add('category-brand');if(category.name.startsWith('Photography'))section.classList.add('category-photography',category.name==='Photography Portrait'?'photography-portrait':'photography-landscape');section.setAttribute('aria-labelledby',`category-${index}`);
- section.innerHTML=`<div class="category-heading"><h3 id="category-${index}"><span class="category-number">0${index+1}</span>${category.name}</h3><div class="controls"><button class="previous" aria-label="Previous ${category.name} projects">‹</button><button class="next" aria-label="Next ${category.name} projects">›</button></div></div><div class="rail" tabindex="0" role="region" aria-label="${category.name} project gallery"></div>`;
- const rail=section.querySelector('.rail');
- category.projects.forEach(project=>{const card=document.createElement('article');card.className='card';let art=`<span class="art-title">${project[3]}</span>`;
- if(project[6])art=`<img src="${project[6][0]}" alt="${project[0]}" loading="lazy">${project[7]?`<span class="photo-location">${project[7]}</span>`:''}`;
- else if(project[2].startsWith('web'))art=`<div class="browser"><div class="browser-bar">● ● ● &nbsp; ${project[0].toLowerCase()}</div><h4>${project[3]}</h4><span class="mini-button">Explore</span><div class="tiles"><i></i><i></i><i></i></div></div>`;
- else if(project[2].startsWith('game'))art=`<span class="game-meta">A STUDENT GAME CONCEPT</span>${art}<span class="play-mark">▷</span>`;
- else art+=`<small>${project[2]==='brand'?'CREATIVE STUDIO':'DESIGN STUDY / 2026'}</small>`;
- card.innerHTML=`<button class="preview ${project[2]}" aria-label="View ${project[0]} project details">${art}</button><h4>${project[0]}</h4><p>${project[1]}</p><div class="card-bottom"><span>${category.name.startsWith('Photography')?'ORIGINAL PHOTOGRAPHY':project[6]?'PORTFOLIO PROJECT':'SAMPLE PROJECT'}</span><button class="detail-button">${category.name.startsWith('Photography')?'View photo':'View project'}</button></div>`;
- const thumbnail=card.querySelector('.preview img');if(thumbnail&&category.name!=='Graphic Designs'&&category.name!=='Brand Design'&&!category.name.startsWith('Photography')){const fit=()=>{if(thumbnail.naturalWidth)thumbnail.parentElement.style.aspectRatio=thumbnail.naturalWidth+'/'+thumbnail.naturalHeight};thumbnail.addEventListener('load',fit);if(thumbnail.complete)fit();}
- card.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>showDetails(category.name,project)));rail.append(card)});
- const previous=section.querySelector('.previous'),next=section.querySelector('.next');
- const update=()=>{previous.disabled=rail.scrollLeft<2;next.disabled=rail.scrollLeft>=rail.scrollWidth-rail.clientWidth-2};
- const move=direction=>rail.scrollBy({left:direction*(rail.firstElementChild.getBoundingClientRect().width+24),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
- previous.addEventListener('click',()=>move(-1));next.addEventListener('click',()=>move(1));rail.addEventListener('scroll',update,{passive:true});rail.addEventListener('keydown',event=>{if(event.target===rail&&['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();move(event.key==='ArrowRight'?1:-1)}});new ResizeObserver(update).observe(rail);galleries.append(section);update();
-});
-dialog.querySelector('.close').addEventListener('click',()=>dialog.close());dialog.addEventListener('click',event=>{const box=dialog.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)dialog.close()});
 
+const groups = [
+  {name:"IT & Development", subtitle:"Websites · Games · Technology", source:["Website Development","Game Development"], theme:"tech"},
+  {name:"Graphic Design", subtitle:"Posters · Digital Art · Photo Manipulation", source:["Graphic Designs"], theme:"design",
+   rows:[{label:"Graphic Designs", source:"Graphic Designs", cls:"design", kind:"design"}]},
+  {name:"Photography", subtitle:"Portrait · Landscape", source:["Photography Portrait","Photography Landscape"], theme:"photo",
+   rows:[{label:"Photography Portrait", source:"Photography Portrait", cls:"portrait", kind:"photo"},{label:"Photography Landscape", source:"Photography Landscape", cls:"landscape", kind:"photo"}]},
+  {name:"Brand & Creative", subtitle:"Branding · Voxel Art", source:["Brand Design","Voxel Design"], theme:"brand"}
+];
+const categoryPosters={
+  tech:{src:"assets/it-development-poster.png",alt:"IT and Development poster: I build websites and games"},
+  design:{src:"assets/graphic-design-poster.png",alt:"Graphic Design poster: made layer by layer"},
+  photo:{src:"assets/photography-poster.png",alt:"Photography poster: every street has a story"},
+  brand:{src:"assets/brand-creative-poster.png",alt:"Brand and Creative poster: brands with a scent, characters with a story"}
+};
+groups.forEach(group=>{
+  group.projects=group.source.flatMap(name=>rawCategories.find(c=>c.name===name)?.projects||[]);
+});
+const byId=id=>document.getElementById(id);
+const galleries=byId("category-experiences");
+const homeView=byId("home-view");
+function openCategory(index){
+  homeView.hidden=true;
+  galleries.hidden=false;
+  galleries.querySelectorAll(".category-experience").forEach(section=>section.hidden=section.id!=="category-"+index);
+  window.scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+  requestAnimationFrame(()=>galleries.querySelectorAll(".slider-block").forEach(b=>b._update&&b._update()));
+}
+function returnHome(){
+  galleries.hidden=true;
+  homeView.hidden=false;
+  window.scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+}
+byId("top").querySelector(".eyebrow");
+document.querySelector(".wordmark").addEventListener("click",e=>{e.preventDefault();returnHome();});
+document.querySelectorAll('.site-header nav a[href^="#"]').forEach(link=>link.addEventListener("click",e=>{
+  const target=link.getAttribute("href");
+  if(target==="#work"||target==="#about"||target==="#contact"){
+    if(homeView.hidden){e.preventDefault();returnHome();setTimeout(()=>byId(target.slice(1)).scrollIntoView({behavior:"smooth"}),80);}
+  }
+}));
+const dialog=byId("project-dialog");
+let activeGroup=null, activeProjectIndex=-1;
+
+function showDetails(group,project){
+  activeGroup=group; activeProjectIndex=group.projects.indexOf(project);
+  byId("dialog-previous").disabled=activeProjectIndex===0;
+  byId("dialog-next").disabled=activeProjectIndex===group.projects.length-1;
+  byId("dialog-category").textContent=group.name;
+  byId("dialog-title").textContent=project[0];
+  byId("dialog-description").textContent=project[4];
+  const location=byId("dialog-location"); location.textContent=project[7]||""; location.hidden=!project[7];
+  byId("dialog-tags").replaceChildren(...project[5].map(tag=>{const s=document.createElement("span");s.textContent=tag;return s;}));
+  byId("dialog-images").replaceChildren(...(project[6]||[]).map((src,i)=>{const img=document.createElement("img");img.src=src;img.alt=project[0]+(i?" — additional image":" — project image");return img;}));
+  byId("project-dialog").showModal();
+}
+function browseProject(direction){
+  if(!activeGroup)return;
+  const next=activeProjectIndex+direction;
+  if(next>=0&&next<activeGroup.projects.length)showDetails(activeGroup,activeGroup.projects[next]);
+}
+byId("dialog-previous").addEventListener("click",()=>browseProject(-1));
+byId("dialog-next").addEventListener("click",()=>browseProject(1));
+dialog.addEventListener("keydown",e=>{if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();browseProject(e.key==="ArrowRight"?1:-1);}});
+dialog.querySelector(".close").addEventListener("click",()=>dialog.close());
+dialog.addEventListener("click",e=>{const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();});
+
+function projectCard(group,project){
+ const article=document.createElement("article"); article.className="project-card";
+ const button=document.createElement("button");button.className="project-image";button.type="button";
+ const src=project[6]?.[0];
+ if(src){const img=document.createElement("img");img.src=src;img.alt=project[0];img.loading="lazy";button.append(img);}
+ else button.textContent=project[3]||project[0];
+ button.addEventListener("click",()=>showDetails(group,project));
+ const title=document.createElement("h4");title.textContent=project[0];
+ const desc=document.createElement("p");desc.textContent=project[1];
+ const link=document.createElement("button");link.className="text-link";link.textContent="View project ↗";link.addEventListener("click",()=>showDetails(group,project));
+ article.append(button,title,desc,link);return article;
+}
+// Slider card: uniform frame, caption on image, label + link footer
+const frameBg={"assets/park-so-jeon.png":"#151414"};
+function sliderCard(group,project,row){
+ const article=document.createElement("article"); article.className="slide-card";
+ const button=document.createElement("button");button.className="slide-image";button.type="button";button.setAttribute("aria-label","Open "+project[0]);
+ const src=project[6]?.[0];
+ if(src){
+  const img=document.createElement("img");img.src=src;img.alt=project[0];img.loading="lazy";
+  // Frames are fixed; an image whose shape is far from its frame is shown whole (contain) instead of cropped.
+  if(row.kind==="design"&&frameBg[src]){img.classList.add("fit");button.style.background=frameBg[src];}
+  button.append(img);
+ }
+ if(project[7]){const cap=document.createElement("span");cap.className="slide-caption";cap.textContent=project[7];button.append(cap);}
+ button.addEventListener("click",()=>showDetails(group,project));
+ const title=document.createElement("h4");title.textContent=project[0];
+ const sub=document.createElement("p");sub.className="slide-sub";sub.textContent=project[1];
+ const foot=document.createElement("div");foot.className="slide-foot";
+ const label=document.createElement("span");label.textContent=row.kind==="photo"?"Original photography":(project[5]?.[0]||"Design");
+ const link=document.createElement("button");link.type="button";link.className="slide-link";link.textContent=row.kind==="photo"?"View photo":"View project";
+ link.addEventListener("click",()=>showDetails(group,project));
+ foot.append(label,link);
+ article.append(button,title,sub,foot);return article;
+}
+function buildSlider(group,row,number){
+ const projects=rawCategories.find(c=>c.name===row.source)?.projects||[];
+ const block=document.createElement("div");block.className="slider-block "+row.cls;
+ block.innerHTML=`<div class="slider-head"><h3><span>${String(number).padStart(2,"0")}</span>${row.label}</h3><div class="slider-arrows"><button type="button" class="slider-arrow prev" aria-label="Previous ${row.label}">‹</button><button type="button" class="slider-arrow next" aria-label="Next ${row.label}">›</button></div></div><div class="slider-track"></div>`;
+ const track=block.querySelector(".slider-track");
+ projects.forEach(p=>track.append(sliderCard(group,p,row)));
+ const prev=block.querySelector(".prev"),next=block.querySelector(".next");
+ const update=()=>{const max=track.scrollWidth-track.clientWidth-2;prev.disabled=track.scrollLeft<=2;next.disabled=track.scrollLeft>=max;const hide=max<=0;block.querySelector(".slider-arrows").style.visibility=hide?"hidden":"visible";};
+ const page=dir=>track.scrollBy({left:dir*(track.clientWidth+22),behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+ prev.addEventListener("click",()=>page(-1));next.addEventListener("click",()=>page(1));
+ track.addEventListener("scroll",update,{passive:true});addEventListener("resize",update);
+ block._update=update;
+ return block;
+}
+groups.forEach((group,index)=>{
+ const section=document.createElement("section");section.className="category-experience";section.id="category-"+index;
+ section.innerHTML=`<div class="section-kicker">0${index+1} / ${group.name.toUpperCase()}</div><div class="category-title-row"><div><h2>${group.name}</h2><p>${group.subtitle}</p></div><a class="back-link" href="#work">Back to selected work ↑</a></div>`;
+ const poster=categoryPosters[group.theme];
+ if(poster){
+  const fig=document.createElement("figure");fig.className="category-poster";
+  const img=document.createElement("img");img.src=poster.src;img.alt=poster.alt;img.loading="lazy";
+  fig.append(img);section.append(fig);
+ }
+ if(group.rows){
+  group.rows.forEach((row,i)=>section.append(buildSlider(group,row,i+1)));
+ }else{
+  const grid=document.createElement("div");grid.className="project-grid";
+  group.projects.forEach(project=>grid.append(projectCard(group,project)));
+  section.append(grid);
+ }
+ galleries.append(section);
+});
+document.querySelectorAll(".work-card").forEach((card,index)=>card.addEventListener("click",event=>{
+  event.preventDefault();
+  openCategory(index);
+}));
+document.querySelectorAll(".back-link").forEach(link=>link.addEventListener("click",event=>{
+  event.preventDefault();
+  returnHome();
+  setTimeout(()=>byId("work").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"}),80);
+}));
+const themeToggle=byId("theme-toggle");
+themeToggle.addEventListener("click",()=>{
+ const dark=document.documentElement.dataset.theme!=="dark";
+ document.documentElement.dataset.theme=dark?"dark":"light";
+ themeToggle.setAttribute("aria-label",dark?"Switch to light mode":"Switch to dark mode");
+ themeToggle.innerHTML=dark?'<span aria-hidden="true">☾</span>':'<span aria-hidden="true">☼</span>';
+});
+const EMAIL="jhoryducog27@gmail.com";
+function say(btn,msg){
+ const status=btn.parentElement.querySelector(".copy-status");if(!status)return;
+ status.textContent=msg;clearTimeout(status._t);status._t=setTimeout(()=>status.textContent="",3500);
+}
+document.querySelectorAll("[data-copy-email]").forEach(btn=>btn.addEventListener("click",async()=>{
+ try{await navigator.clipboard.writeText(EMAIL);say(btn,"Email copied");}
+ catch{say(btn,EMAIL);}
+}));
+// Resume: set RESUME_READY to true once assets/Jhory-Ducog-Resume.pdf has been added.
+const RESUME_READY=true;
+const resumeBtn=byId("resume-btn");
+resumeBtn.addEventListener("click",e=>{
+ if(RESUME_READY)return; // normal download of assets/Jhory-Ducog-Resume.pdf
+ e.preventDefault();
+ say(resumeBtn,"Resume coming soon");
+});
